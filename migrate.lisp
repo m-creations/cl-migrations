@@ -72,8 +72,7 @@
 (defun generate (name)
   "Generate an empty migration file with an assigned version number."
   (unless *migration-dir*
-    (warn "Migrations directory not set properly. Please check your config file.")
-    (return-from generate :skipped))
+    (read-specs))
   (let ((version (get-latest-migration)))
     (unless version
       (return-from generate :skipped))

@@ -29,5 +29,7 @@
   (:export :*config-pathname*
 	   :*migration-dir*
 	   :generate
-	   :migrate)
+	   :migrate
+	   :connect-db
+	   :disconnect-db)
   (:documentation "Database Migrations for Common Lisp"))

@@ -58,6 +58,10 @@
 				    (find-package '#:cl-migrations)))
 		(second (first specs)))
 	  (setf *migration-dir* (first (second (second specs))))
+	  (unless (equal (subseq *migration-dir* (1- (length *migration-dir*))) "/")
+	    ;;Looks like the user forgot add a trailing slash - fix this.
+	    (setf *migration-dir* (concatenate 'string *migration-dir* "/")))
+	  (format t "~%Setting up migrations directory: ~S" *migration-dir*)
 	  spec))))
 
 (defun spec-fn (db-type)
@@ -115,5 +119,13 @@
       (return-from init-config :skipped))
     ;;The spec works, so we create the schema table
     (create-schema-table)
-    (format t "~%Database intialized.")
+    (format t "~%Database ready.")
     (zerop error-count)))
+
+(defun connect-db ()
+  (if (init-config)
+      (format t "~%Be sure run disconnect-db when you are done.")))
+
+(defun disconnect-db ()
+  (if *default-database*
+      (disconnect)))
