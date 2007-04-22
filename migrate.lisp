@@ -26,7 +26,7 @@
 
 (defun get-db-version ()
   (first (select 'version
-	  :from *schema-table-name*
+  	  :from *schema-table-name*
 	  :flatp t
 	  :field-names nil)))
 
@@ -45,10 +45,10 @@
 
 (defun get-migration-number (file)
   (parse-integer 
-   (subseq (file-namestring file) 0 (search "-" (file-namestring file)))))
+   (subseq (file-namestring file) 0 (search "-" (file-namestring file))) :junk-allowed t))
 
 (defun compare-files (file1 file2)
-  (string< (file-namestring file1) (file-namestring file2)))
+   (< (get-migration-number file1) (get-migration-number file2)))
 
 (defun get-migration-files ()
   "Get all files from the migrations directory, and sort them numerically."
@@ -58,7 +58,8 @@
   (let ((files (directory (make-pathname :name :wild
 					 :type "lisp"
 					 :defaults *migration-dir*))))
-    (sort files #'compare-files)))
+    (sort (remove-if (lambda(x) (null (get-migration-number x))) files)
+	  #'compare-files)))
 
 (defun get-latest-migration ()
   "Get the version of latest migration available."
@@ -83,6 +84,7 @@
 		     :type "lisp"
 		     :defaults *migration-dir*))
 	   (file-name-str (file-namestring file-name)))
+      (ensure-directories-exist file-name)
       (with-open-file (stream file-name 
 			      :direction :output 
 			      :if-does-not-exist :create)
@@ -140,4 +142,3 @@
 		 (t (format t "~%~%-----------------~%Total migrations: ~S" 
 			    (exec-migrations db-version version)))))
       (disconnect))))
-  

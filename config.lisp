@@ -95,9 +95,9 @@
 (defun create-schema-table ()
   "Check for schema table and create if it does not exist."
   (if (table-exists-p *schema-table-name*)
-      (format t "Schema table exists.")
+      (format t "~%Schema table exists.")
       (progn 
-	(format t "Schema table doesn't exist, creating.")
+	(format t "~%Schema table doesn't exist, creating.")
 	(create-table *schema-table-name* '((version integer)))
 	;;Initialize the version number to 0.
 	(insert-records :into *schema-table-name*

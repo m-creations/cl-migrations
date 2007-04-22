@@ -30,7 +30,7 @@
 
 (in-package :cl-migrations-asd)
 
-(defvar *cl-migrations-version* "0.0.1")
+(defvar *cl-migrations-version* "0.0.3")
 
 (export '*cl-migrations-version*)
 

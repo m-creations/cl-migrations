@@ -27,7 +27,6 @@
 (defpackage :cl-migrations
   (:use :cl :clsql)
   (:export :*config-pathname*
-	   :*migration-dir*
 	   :generate
 	   :migrate
 	   :connect-db
