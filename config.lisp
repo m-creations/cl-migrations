@@ -47,6 +47,19 @@
    (oracle :accessor oracle-spec :initform nil))
   (:documentation "Connection specs for CLSQL for different databases"))
 
+(defun resolve-migration-dir (specs)
+  (let ((migration-conf (second (second specs))))
+    (typecase (first migration-conf)
+      (string
+       (first migration-conf))
+      (keyword
+       (when (eql (first migration-conf) :realtive)
+         (namestring
+          (merge-pathnames (second migration-conf)
+                           (make-pathname :name nil
+                                          :type nil
+                                          :defaults *config-pathname*))))))))
+
 (defun read-specs (&optional (path *config-pathname*))
   "Read database and migrations directory specs and set respective variables."
   (if (probe-file path)
@@ -57,7 +70,7 @@
 			    (intern (symbol-name (first (first specs)))
 				    (find-package '#:cl-migrations)))
 		(second (first specs)))
-	  (setf *migration-dir* (first (second (second specs))))
+	  (setf *migration-dir* (resolve-migration-dir specs))
 	  (unless (equal (subseq *migration-dir* (1- (length *migration-dir*))) "/")
 	    ;;Looks like the user forgot add a trailing slash - fix this.
 	    (setf *migration-dir* (concatenate 'string *migration-dir* "/")))
