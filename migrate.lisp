@@ -65,10 +65,11 @@
   "Get the version of latest migration available."
   (let ((files-list (get-migration-files))
 	(counter 0))
-    (dolist (file files-list counter)
-      (unless (equal (incf counter) (get-migration-number file))
-	(warn "Migration #~S is missing!" counter)
-	(return)))))
+    (unless (eql files-list :skipped)
+      (dolist (file files-list counter)
+        (unless (equal (incf counter) (get-migration-number file))
+          (warn "Migration #~S is missing!" counter)
+          (return))))))
 	 
 (defun generate (name)
   "Generate an empty migration file with an assigned version number."
