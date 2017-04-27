@@ -71,7 +71,8 @@
 				    (find-package '#:cl-migrations)))
 		(second (first specs)))
 	  (setf *migration-dir* (resolve-migration-dir specs))
-	  (unless (equal (subseq *migration-dir* (1- (length *migration-dir*))) "/")
+	  (unless (or (null *migration-dir*)
+                      (equal (subseq *migration-dir* (1- (length *migration-dir*))) "/"))
 	    ;;Looks like the user forgot add a trailing slash - fix this.
 	    (setf *migration-dir* (concatenate 'string *migration-dir* "/")))
 	  (format t "~%Setting up migrations directory: ~S" *migration-dir*)
