@@ -53,7 +53,7 @@
       (string
        (first migration-conf))
       (keyword
-       (when (eql (first migration-conf) :realtive)
+       (when (eql (first migration-conf) :relative)
          (namestring
           (merge-pathnames (second migration-conf)
                            (make-pathname :name nil
