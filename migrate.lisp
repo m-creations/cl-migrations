@@ -25,22 +25,26 @@
 (in-package :cl-migrations)
 
 (defun get-db-version ()
-  (first (select 'version
-  	  :from *schema-table-name*
-	  :flatp t
-	  :field-names nil)))
+  (parse-integer
+   (first (select 'version
+            :from *schema-table-name*
+            :flatp t
+            :field-names nil))))
 
 #.(locally-enable-sql-reader-syntax)
-(defun incf-db-version ()
-  (let ((db-version (get-db-version)))
+(defun incf-db-version (db-version mig-version)
+  (let ((db-version/string (princ-to-string db-version))
+        (mig-version/string (princ-to-string mig-version)))
     (update-records (make-symbol *schema-table-name*)
-		    :av-pairs `((version ,(1+ db-version)))
-		    :where [= [version] db-version])))
-(defun decf-db-version ()
-  (let ((db-version (get-db-version)))
+                    :av-pairs `((version ,mig-version/string))
+                    :where [= [version] db-version/string])))
+
+(defun decf-db-version (db-version mig-version)
+  (let ((db-version/string (princ-to-string db-version))
+        (mig-version/string (princ-to-string mig-version)))
     (update-records (make-symbol *schema-table-name*)
-		    :av-pairs `((version ,(1- db-version)))
-		    :where [= [version] db-version])))
+                    :av-pairs `((version ,mig-version/string))
+                    :where [= [version] db-version/string])))
 #.(restore-sql-reader-syntax-state)
 
 (defun get-migration-number (file)
@@ -63,36 +67,34 @@
 
 (defun get-latest-migration ()
   "Get the version of latest migration available."
-  (let ((files-list (get-migration-files))
-	(counter 0))
+  (let ((files-list (get-migration-files)))
     (unless (eql files-list :skipped)
-      (dolist (file files-list counter)
-        (unless (equal (incf counter) (get-migration-number file))
-          (warn "Migration #~S is missing!" counter)
-          (return))))))
-	 
+      (get-migration-number (first (last files-list))))))
+
+(defun current-date-string ()
+  "Generates the current date as string of format YYYYMMDDhhmmss."
+  (let ((date (reverse (subseq (multiple-value-list (get-decoded-time)) 0 6))))
+    (format nil "~{~2,'0D~}" date)))
+
 (defun generate (name)
   "Generate an empty migration file with an assigned version number."
   (unless *migration-dir*
     (read-specs))
-  (let ((version (get-latest-migration)))
-    (unless version
-      (return-from generate :skipped))
-    (let* ((file-name (make-pathname 
-		     :name (concatenate 
-			    'string 
-			    (write-to-string (incf version)) "-" name)
-		     :type "lisp"
-		     :defaults *migration-dir*))
-	   (file-name-str (file-namestring file-name)))
-      (ensure-directories-exist file-name)
-      (with-open-file (stream file-name 
-			      :direction :output 
-			      :if-does-not-exist :create)
-	(write-line (concatenate 'string ";; " file-name-str) stream)
-	(with-standard-io-syntax 
-	  (prin1 '(:up () :down ()) stream)))
-      file-name-str)))
+  (let* ((file-name (make-pathname 
+                     :name (concatenate 
+                            'string 
+                            (current-date-string) "-" name)
+                     :type "lisp"
+                     :defaults *migration-dir*))
+         (file-name-str (file-namestring file-name)))
+    (ensure-directories-exist file-name)
+    (with-open-file (stream file-name 
+                            :direction :output 
+                            :if-does-not-exist :create)
+      (write-line (concatenate 'string ";; " file-name-str) stream)
+      (with-standard-io-syntax 
+        (prin1 '(:up () :down ()) stream)))
+    file-name-str))
   
 (defun get-file-range (from to)
   "Get the migration files within the given range, in ascending order."
@@ -118,13 +120,13 @@
 	    (let* ((migration (read stream))
 		   (ddl (if (> mig-version db-version)
 			    (getf migration :up)
-			  (getf migration :down))))
+                            (getf migration :down))))
 	      (dolist (statement ddl)
 		(format t "~%EXEC: ~S" (first statement))
 		(execute-command (first statement))))))
 	(if (> mig-version db-version)
-	    (incf-db-version)
-	    (decf-db-version))))))
+	    (incf-db-version db-version mig-version)
+	    (decf-db-version db-version mig-version))))))
   
 (defun migrate (&key version)
   "Initiate migration procedure."
