@@ -112,7 +112,7 @@
       (format t "~%Schema table exists.")
       (progn 
 	(format t "~%Schema table doesn't exist, creating.")
-	(create-table *schema-table-name* '((version integer)))
+	(create-table *schema-table-name* '((version (varchar 500))))
 	;;Initialize the version number to 0.
 	(insert-records :into *schema-table-name*
 			:attributes '(version)
